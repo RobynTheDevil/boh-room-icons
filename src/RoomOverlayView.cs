@@ -20,6 +20,8 @@ namespace RoomIconsMod
         private const float InsetY = 6f;
         private const int SortingOrder = 5;
 
+        private static readonly Color ChipColor = new Color(0f, 0f, 0f, 0.85f);
+
         private static TMP_FontAsset _sharedFont;
 
         private GameObject _container;
@@ -35,6 +37,7 @@ namespace RoomIconsMod
             public GameObject Go;
             public RectTransform Rect;
             public Image Image;
+            public RectTransform Chip;
             public TextMeshProUGUI Label;
         }
 
@@ -180,19 +183,25 @@ namespace RoomIconsMod
             slot.Image.color = alternative ? new Color(1f, 1f, 1f, 0.92f) : Color.white;
             slot.Go.SetActive(true);
 
-            if (slot.Label != null)
+            if (slot.Chip != null && slot.Label != null)
             {
                 bool showLevel = spec.Level > 1;
-                slot.Label.gameObject.SetActive(showLevel);
+                slot.Chip.gameObject.SetActive(showLevel);
                 if (showLevel)
                 {
                     slot.Label.text = spec.Level.ToString();
-                    slot.Label.fontSize = Mathf.Max(6f, 11f * scale);
+                    slot.Label.fontSize = Mathf.Max(7f, 11f * scale);
+                    slot.Label.ForceMeshUpdate(false, false);
+                    ResizeChip(slot.Chip, slot.Label);
                 }
             }
 
             return x + size;
         }
+
+        // The chip hugs the glyphs, so it has to be sized after the text mesh is rebuilt.
+        private static void ResizeChip(RectTransform chip, TextMeshProUGUI tmp) =>
+            chip.sizeDelta = new Vector2(tmp.preferredWidth + 2f, tmp.preferredHeight);
 
         private void PlaceSeparator(int index, float x, float width, float height, float rowHeight, float alpha)
         {
@@ -220,34 +229,53 @@ namespace RoomIconsMod
             image.raycastTarget = false;
 
             var slot = new IconSlot { Go = go, Rect = rect, Image = image };
-            slot.Label = CreateLabel(rect);
+            CreateValueChip(slot);
             _icons.Add(slot);
         }
 
-        private TextMeshProUGUI CreateLabel(RectTransform parent)
+        /// Dark chip in the icon's bottom-right corner with the level on top, matching how
+        /// Didumos labels its aspect icons. A TMP outline is not an option here: the font
+        /// asset is shared with the game's own text, and outlineWidth writes through to the
+        /// shared material.
+        private void CreateValueChip(IconSlot slot)
         {
             TMP_FontAsset font = ResolveFont();
             if (font == null)
-                return null;
+                return;
 
-            var go = new GameObject("Level");
-            RectTransform rect = go.AddComponent<RectTransform>();
-            rect.SetParent(parent, false);
-            rect.anchorMin = new Vector2(0f, 0f);
-            rect.anchorMax = new Vector2(1f, 0f);
-            rect.pivot = new Vector2(0.5f, 0f);
-            rect.offsetMin = new Vector2(0f, -2f);
-            rect.offsetMax = new Vector2(0f, 10f);
+            var chipGo = new GameObject("ValueChip");
+            RectTransform chip = chipGo.AddComponent<RectTransform>();
+            chip.SetParent(slot.Rect, false);
+            Vector2 bottomRight = new Vector2(1f, 0f);
+            chip.anchorMin = bottomRight;
+            chip.anchorMax = bottomRight;
+            chip.pivot = bottomRight;
+            chip.anchoredPosition = Vector2.zero;
+            chip.sizeDelta = Vector2.zero;
 
-            var label = go.AddComponent<TextMeshProUGUI>();
+            Image bg = chipGo.AddComponent<Image>();
+            bg.color = ChipColor;
+            bg.raycastTarget = false;
+
+            var textGo = new GameObject("Value");
+            RectTransform textRect = textGo.AddComponent<RectTransform>();
+            textRect.SetParent(chip, false);
+            textRect.anchorMin = Vector2.zero;
+            textRect.anchorMax = Vector2.one;
+            textRect.offsetMin = new Vector2(1f, 0f);
+            textRect.offsetMax = new Vector2(-1f, 0f);
+
+            var label = textGo.AddComponent<TextMeshProUGUI>();
             label.font = font;
             label.fontSize = 11f;
-            label.alignment = TextAlignmentOptions.Bottom;
+            label.fontStyle = FontStyles.Bold;
             label.color = Color.white;
+            label.alignment = TextAlignmentOptions.Center;
+            label.enableWordWrapping = false;
             label.raycastTarget = false;
-            label.outlineWidth = 0.2f;
-            label.outlineColor = new Color32(0, 0, 0, 200);
-            return label;
+
+            slot.Chip = chip;
+            slot.Label = label;
         }
 
         private TMP_FontAsset ResolveFont()
