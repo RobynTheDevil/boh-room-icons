@@ -39,7 +39,6 @@ namespace RoomIconsMod
             if (view == null)
                 view = host.gameObject.AddComponent<RoomOverlayView>();
 
-            RoomOverlay.RefreshGateFromCamera();
             view.Build(reqs);
         }
     }

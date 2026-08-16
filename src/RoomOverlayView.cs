@@ -88,6 +88,16 @@ namespace RoomIconsMod
             Build(fresh);
         }
 
+        /// Counter-scales the whole row against camera distance so it stays legible as the
+        /// camera pulls back. Applied to the container, so icons, chips and the divider all
+        /// scale together and the row stays pinned to the room's bottom-left corner.
+        public void SetIconScale(float scale)
+        {
+            if (_container == null)
+                return;
+            _container.transform.localScale = new Vector3(scale, scale, 1f);
+        }
+
         public void ApplyVisibility()
         {
             if (_container == null)
@@ -114,6 +124,9 @@ namespace RoomIconsMod
             Canvas canvas = _container.AddComponent<Canvas>();
             canvas.overrideSorting = true;
             canvas.sortingOrder = SortingOrder;
+
+            // A room built while the camera is already pulled back must not pop in at 1x.
+            SetIconScale(RoomOverlay.CurrentIconScale());
         }
 
         private void Layout(RoomReqs reqs)
@@ -131,32 +144,32 @@ namespace RoomIconsMod
 
             float natural = MeasureNatural(reqs);
             float hostWidth = ((RectTransform)transform).sizeDelta.x;
-            float scale = hostWidth <= 0f || natural <= hostWidth ? 1f : hostWidth / natural;
+            float fit = hostWidth <= 0f || natural <= hostWidth ? 1f : hostWidth / natural;
 
-            float icon = IconSize * scale;
+            float icon = IconSize * fit;
             float x = 0f;
             int iconIndex = 0;
             int sepIndex = 0;
 
             for (int i = 0; i < reqs.Essential.Count; i++)
             {
-                x = PlaceIcon(iconIndex++, reqs.Essential[i], x, icon, scale, false);
+                x = PlaceIcon(iconIndex++, reqs.Essential[i], x, icon, fit, false);
                 if (i < reqs.Essential.Count - 1)
-                    x += IconGap * scale;
+                    x += IconGap * fit;
             }
 
             if (reqs.Essential.Count > 0 && reqs.Required.Count > 0)
             {
-                x += DividerMargin * scale;
-                PlaceSeparator(sepIndex++, x, DividerWidth * scale, icon * 0.75f, icon);
-                x += DividerWidth * scale + DividerMargin * scale;
+                x += DividerMargin * fit;
+                PlaceSeparator(sepIndex++, x, DividerWidth * fit, icon * 0.75f, icon);
+                x += DividerWidth * fit + DividerMargin * fit;
             }
 
             for (int i = 0; i < reqs.Required.Count; i++)
             {
-                x = PlaceIcon(iconIndex++, reqs.Required[i], x, icon, scale, true);
+                x = PlaceIcon(iconIndex++, reqs.Required[i], x, icon, fit, true);
                 if (i < reqs.Required.Count - 1)
-                    x += IconGap * scale;
+                    x += IconGap * fit;
             }
 
             for (int i = iconIndex; i < _builtIcons; i++)

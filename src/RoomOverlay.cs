@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System.Text;
-using SecretHistories.Constants;
 using SecretHistories.Core;
 using SecretHistories.Entities;
 using SecretHistories.Services;
@@ -34,18 +33,16 @@ namespace RoomIconsMod
             new Dictionary<string, RoomReqs>();
 
         private static bool _userVisible = true;
-        private static bool _zoomGateOpen;
-        private static ZoomLevel _lastPolledLevel = ZoomLevel.Unspecified;
-        private static bool _polledOnce;
         private static bool _contentEventsWired;
+        private static float _appliedScale = -1f;
         private static float _lastPendingTick = -999f;
         private const float PendingRetryInterval = 0.5f;
 
-        public static ZoomLevel ShowAtOrCloserThan = ZoomLevel.Mid;
+        /// Safety rail only. The camera clamps its own z to [FARTHEST, CLOSE], which caps
+        /// the natural scale at ZOOM_Z_FARTHEST / ZOOM_Z_MID = 3.
+        private const float MaxIconScale = 4f;
 
-        public static bool ZoomGateOpen => _zoomGateOpen;
-
-        public static bool IsVisible => _userVisible && _zoomGateOpen;
+        public static bool IsVisible => _userVisible;
 
         public static void ToggleVisible()
         {
@@ -187,47 +184,44 @@ namespace RoomIconsMod
             }
         }
 
-        public static ZoomLevel CurrentZoomLevel()
+        /// Zooming moves the camera along z, so an overlay's apparent size goes as
+        /// localScale / |z|. Scaling by |z| / |ZOOM_Z_MID| therefore holds the icons at a
+        /// fixed size on screen however far out the camera pulls.
+        ///
+        /// Clamped at 1 so zooming in closer than the reference lets them grow with the
+        /// room instead of shrinking: up close they read as part of the room, and only
+        /// once the room gets too small to carry them do they start holding their own size.
+        public static float CurrentIconScale()
         {
             CamOperator cam = Watchman.Get<CamOperator>();
             if (cam == null)
-                return ZoomLevel.Unspecified;
+                return 1f;
 
-            float z = Mathf.Abs(cam.GetCurrentZoomHeight());
-            if (z <= Mathf.Abs(cam.ZOOM_Z_CLOSE))
-                return ZoomLevel.Close;
-            if (z <= Mathf.Abs(cam.ZOOM_Z_MID))
-                return ZoomLevel.Mid;
-            if (z <= Mathf.Abs(cam.ZOOM_Z_QUITE_FAR))
-                return ZoomLevel.QuiteFar;
-            return z <= Mathf.Abs(cam.ZOOM_Z_FARTHEST) ? ZoomLevel.Farthest : ZoomLevel.Unspecified;
+            float reference = Mathf.Abs(cam.ZOOM_Z_MID);
+            if (reference <= 0f)
+                return 1f;
+
+            return Mathf.Clamp(Mathf.Abs(cam.GetCurrentZoomHeight()) / reference, 1f, MaxIconScale);
         }
 
-        // ZoomLevel ordinals ascend from Close, so "<=" reads as "at or closer than".
-        private static bool GateOpenFor(ZoomLevel level) =>
-            level != ZoomLevel.Unspecified && level <= ShowAtOrCloserThan;
-
-        public static void RefreshGateFromCamera()
-        {
-            ZoomLevel level = CurrentZoomLevel();
-            _polledOnce = true;
-            _lastPolledLevel = level;
-            _zoomGateOpen = GateOpenFor(level);
-        }
-
-        public static void TickZoomGate()
+        /// The camera glides continuously, so this cannot key off discrete zoom levels the
+        /// way a show/hide gate could. Compare against the scale actually applied and skip
+        /// the fan-out until it drifts far enough to be visible.
+        public static void TickZoomScale()
         {
             if (Live.Count == 0)
                 return;
 
-            ZoomLevel level = CurrentZoomLevel();
-            if (_polledOnce && level == _lastPolledLevel)
+            float scale = CurrentIconScale();
+            if (Mathf.Abs(scale - _appliedScale) < 0.01f)
                 return;
 
-            _polledOnce = true;
-            _lastPolledLevel = level;
-            _zoomGateOpen = GateOpenFor(level);
-            ApplyVisibilityToAll();
+            _appliedScale = scale;
+            foreach (RoomOverlayView v in Live)
+            {
+                if (v != null)
+                    v.SetIconScale(scale);
+            }
         }
 
         /// UpdateVisuals only fires on change, so rooms present at world load never get an
