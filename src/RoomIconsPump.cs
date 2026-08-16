@@ -5,8 +5,6 @@ namespace RoomIconsMod
     /// Single per-frame driver. The views themselves are passive.
     public class RoomIconsPump : MonoBehaviour
     {
-        public static KeyCode ToggleKey = KeyCode.F4;
-
         private bool _seeded;
         private bool _contentWired;
 
@@ -21,9 +19,6 @@ namespace RoomIconsMod
             RoomOverlay.TickZoomScale();
             RoomOverlay.TickVisibility();
             RoomOverlay.TickPendingAssets();
-
-            if (Input.GetKeyDown(ToggleKey))
-                RoomOverlay.ToggleVisible();
         }
     }
 }
