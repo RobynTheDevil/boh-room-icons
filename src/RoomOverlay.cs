@@ -40,9 +40,9 @@ namespace RoomIconsMod
         private const float PendingRetryInterval = 0.5f;
         private const float VisibilityRetryInterval = 0.25f;
 
-        /// Safety rail only. The camera clamps its own z to [FARTHEST, CLOSE], which caps
-        /// the natural scale at ZOOM_Z_FARTHEST / ZOOM_Z_MID = 3.
-        private const float MaxIconScale = 4f;
+        /// Safety rail only. The camera clamps its own z to [FARTHEST, CLOSE], so with
+        /// ZOOM_Z_QUITE_CLOSE as the reference the natural ceiling is 2400 / 200 = 12.
+        private const float MaxIconScale = 12f;
 
         public static bool IsVisible => _userVisible;
 
@@ -200,19 +200,25 @@ namespace RoomIconsMod
         }
 
         /// Zooming moves the camera along z, so an overlay's apparent size goes as
-        /// localScale / |z|. Scaling by |z| / |ZOOM_Z_MID| therefore holds the icons at a
+        /// localScale / |z|. Scaling by |z| / reference therefore holds the icons at a
         /// fixed size on screen however far out the camera pulls.
         ///
-        /// Clamped at 1 so zooming in closer than the reference lets them grow with the
-        /// room instead of shrinking: up close they read as part of the room, and only
-        /// once the room gets too small to carry them do they start holding their own size.
+        /// The reference is the single knob for both when scaling starts and how large the
+        /// icons end up: beyond it the held apparent size is 1 / reference, so a smaller
+        /// reference both begins scaling closer in and holds a bigger size once it does.
+        /// ZOOM_Z_QUITE_CLOSE means the row keeps the size it has when the camera is one
+        /// step off its closest position, all the way out to the farthest zoom.
+        ///
+        /// Clamped at 1 so zooming in nearer than the reference lets the icons grow with
+        /// the room instead of shrinking: up close they read as part of the room, and only
+        /// past the reference do they start holding their own size.
         public static float CurrentIconScale()
         {
             CamOperator cam = Watchman.Get<CamOperator>();
             if (cam == null)
                 return 1f;
 
-            float reference = Mathf.Abs(cam.ZOOM_Z_MID);
+            float reference = Mathf.Abs(cam.ZOOM_Z_QUITE_CLOSE);
             if (reference <= 0f)
                 return 1f;
 
