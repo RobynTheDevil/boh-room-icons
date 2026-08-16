@@ -40,8 +40,9 @@ namespace RoomIconsMod
         private const float PendingRetryInterval = 0.5f;
         private const float VisibilityRetryInterval = 0.25f;
 
-        /// Safety rail only. The camera clamps its own z to [FARTHEST, CLOSE], so with
-        /// ZOOM_Z_QUITE_CLOSE as the reference the natural ceiling is 2400 / 200 = 12.
+        /// Safety rail only. The camera clamps its own z to [FARTHEST, CLOSE], so the
+        /// reference below already caps the natural scale at 2400 / 500 = 4.8. Per-room
+        /// clamping in RoomOverlayView usually binds well before either.
         private const float MaxIconScale = 12f;
 
         public static bool IsVisible => _userVisible;
@@ -206,8 +207,9 @@ namespace RoomIconsMod
         /// The reference is the single knob for both when scaling starts and how large the
         /// icons end up: beyond it the held apparent size is 1 / reference, so a smaller
         /// reference both begins scaling closer in and holds a bigger size once it does.
-        /// ZOOM_Z_QUITE_CLOSE means the row keeps the size it has when the camera is one
-        /// step off its closest position, all the way out to the farthest zoom.
+        /// The reference sits midway between ZOOM_Z_QUITE_CLOSE and ZOOM_Z_MID: tuned by
+        /// eye, and expressed against those two so it tracks the game's own zoom stops
+        /// rather than hardcoding 500.
         ///
         /// Clamped at 1 so zooming in nearer than the reference lets the icons grow with
         /// the room instead of shrinking: up close they read as part of the room, and only
@@ -218,7 +220,7 @@ namespace RoomIconsMod
             if (cam == null)
                 return 1f;
 
-            float reference = Mathf.Abs(cam.ZOOM_Z_QUITE_CLOSE);
+            float reference = Mathf.Abs((cam.ZOOM_Z_QUITE_CLOSE + cam.ZOOM_Z_MID) / 2);
             if (reference <= 0f)
                 return 1f;
 
