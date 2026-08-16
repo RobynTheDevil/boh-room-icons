@@ -38,6 +38,8 @@ namespace RoomIconsMod
         private static ZoomLevel _lastPolledLevel = ZoomLevel.Unspecified;
         private static bool _polledOnce;
         private static bool _contentEventsWired;
+        private static float _lastPendingTick = -999f;
+        private const float PendingRetryInterval = 0.5f;
 
         public static ZoomLevel ShowAtOrCloserThan = ZoomLevel.Mid;
 
@@ -78,6 +80,28 @@ namespace RoomIconsMod
         }
 
         public static void ClearCache() => ReqsByTerrainId.Clear();
+
+        /// The font is borrowed from a card, which need not exist when rooms are first
+        /// seeded. UpdateVisuals does not fire again for a room that is just sitting there
+        /// shrouded, so without this a late-resolving font would never be picked up and the
+        /// value chips would stay missing for the whole session.
+        public static void TickPendingAssets()
+        {
+            if (Live.Count == 0)
+                return;
+            if (Time.unscaledTime - _lastPendingTick < PendingRetryInterval)
+                return;
+            _lastPendingTick = Time.unscaledTime;
+
+            foreach (RoomOverlayView v in Live)
+            {
+                if (v != null && v.PendingAssets)
+                {
+                    RefreshAll();
+                    return;
+                }
+            }
+        }
 
         /// Requirements are read from the live Compendium every time the cache misses, so a
         /// content mod that alters a room's unlock cost is picked up with no change here.
