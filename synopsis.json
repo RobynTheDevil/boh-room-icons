@@ -1,0 +1,7 @@
+{
+    "name": "Room Icons",
+    "author": "Robyn",
+    "version": "0.1.0",
+    "description": "Draws each locked room's unlock requirements as aspect icons on the map.",
+    "description_long": "Hush House shows a room's unlock cost only when you hover it for a moment or click into its detail window. Room Icons draws those requirements directly onto every locked, reachable room, so you can plan a route through the house at a glance.\n\n[b]Reading the icons[/b]\n[list]\n[*][b]Solid group[/b] — essential aspects. You need [i]all[/i] of these.\n[*][b]Dot-separated group[/b] — required principles. [i]Any one[/i] of them at its listed strength is enough.\n[/list]\n\nIcons hide when you zoom out past the midpoint, and disappear once a room is opened.\n\n[b]Requirements[/b]\nThis is a DLL mod, so you must also subscribe to [b]Ghirbi, the Gatekeeper[/b] for it to load."
+}
