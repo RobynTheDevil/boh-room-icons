@@ -32,6 +32,10 @@ namespace RoomIconsMod
         private const float ChipHeight = 13f;
         private const float ChipDigitWidth = 7f;
 
+        /// Cap the camera counter-scale per room so the row never grows wider than the
+        /// room it labels. Set false to let icons keep their on-screen size regardless.
+        private const bool ClampScaleToRoomWidth = true;
+
         private const float FontScanInterval = 1f;
         private const int FontFallbackAfterScans = 8;
 
@@ -50,6 +54,7 @@ namespace RoomIconsMod
         private RoomReqs _reqs;
         private ConnectedTerrain _terrain;
         private bool _pendingAssets;
+        private float _maxScale = float.MaxValue;
 
         private class IconSlot
         {
@@ -106,7 +111,8 @@ namespace RoomIconsMod
         {
             if (_container == null)
                 return;
-            _container.transform.localScale = new Vector3(scale, scale, 1f);
+            float s = Mathf.Min(scale, _maxScale);
+            _container.transform.localScale = new Vector3(s, s, 1f);
         }
 
         /// Lock state is re-read here rather than trusted from build time. Seeding runs as
@@ -160,7 +166,7 @@ namespace RoomIconsMod
                 AddSeparator(_builtSeps++);
 
             float natural = MeasureNatural(reqs);
-            float hostWidth = ((RectTransform)transform).sizeDelta.x;
+            float hostWidth = HostWidth();
             float fit = hostWidth <= 0f || natural <= hostWidth ? 1f : hostWidth / natural;
 
             float icon = IconSize * fit;
@@ -195,6 +201,23 @@ namespace RoomIconsMod
                 _seps[i].gameObject.SetActive(false);
 
             ((RectTransform)_container.transform).sizeDelta = new Vector2(x, icon);
+
+            // The row is laid out at 1x and then multiplied by the camera counter-scale, so
+            // the ceiling that keeps it inside the room is simply how many times its own
+            // width fits across the room. Recomputed here because it moves with both the
+            // requirement count and the room.
+            _maxScale = ClampScaleToRoomWidth && hostWidth > 0f && x > 0f
+                ? Mathf.Max(1f, hostWidth / x)
+                : float.MaxValue;
+
+            SetIconScale(RoomOverlay.CurrentIconScale());
+        }
+
+        private float HostWidth()
+        {
+            var rect = (RectTransform)transform;
+            float w = rect.rect.width;
+            return w > 0f ? w : rect.sizeDelta.x;
         }
 
         private float MeasureNatural(RoomReqs reqs)
