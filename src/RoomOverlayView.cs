@@ -15,7 +15,7 @@ namespace RoomIconsMod
         private const float IconSize = 24f;
         private const float IconGap = 2f;
         private const float DividerWidth = 1f;
-        private const float DividerMargin = 5f;
+        private const float DividerMargin = 2f;
         private const float InsetX = 6f;
         private const float InsetY = 6f;
         private const int SortingOrder = 5;
