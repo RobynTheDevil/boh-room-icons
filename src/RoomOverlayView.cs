@@ -20,9 +20,17 @@ namespace RoomIconsMod
         private const float InsetY = 6f;
         private const int SortingOrder = 5;
 
+        private const float BaseFontSize = 11f;
+        private const float MinFontSize = 7f;
+
+        // Padding added around the measured glyphs. Didumos uses preferredWidth + 2 with no
+        // vertical padding; these are the knobs for tightening or loosening that fit.
+        private const float ChipPadX = 2f;
+        private const float ChipPadY = 0f;
+
+        // Fallback box, used only if the font exposes no metrics for these characters.
         private const float ChipHeight = 13f;
         private const float ChipDigitWidth = 7f;
-        private const float ChipPadX = 5f;
 
         private const float FontScanInterval = 1f;
         private const int FontFallbackAfterScans = 8;
@@ -223,21 +231,55 @@ namespace RoomIconsMod
                 if (showLevel)
                 {
                     string text = spec.Level.ToString();
+                    float fontSize = Mathf.Max(MinFontSize, BaseFontSize * scale);
                     slot.Label.text = text;
-                    slot.Label.fontSize = Mathf.Max(7f, 11f * scale);
-                    slot.Chip.sizeDelta = ChipSize(text.Length, scale);
+                    slot.Label.fontSize = fontSize;
+                    slot.Chip.sizeDelta = ChipSize(text, fontSize, scale);
                 }
             }
 
             return x + size;
         }
 
-        /// Sized from the digit count rather than from TMP's preferredWidth. preferredWidth
-        /// needs a rebuilt mesh, and ForceMeshUpdate is a no-op while the object is
-        /// inactive, which left the chip 0x0: an invisible background, and a text rect
-        /// whose stretch offsets then went negative so the number drew outside the icon.
-        private static Vector2 ChipSize(int digits, float scale) =>
-            new Vector2(ChipPadX + ChipDigitWidth * digits, ChipHeight) * scale;
+        /// Measured from the font's own glyph metrics, so the chip hugs the number the way
+        /// Didumos's does, but without TMP's preferredWidth. preferredWidth needs a rebuilt
+        /// mesh and ForceMeshUpdate is a no-op while the object is inactive, which is how
+        /// the chip previously ended up 0x0. Glyph metrics are static data on the font
+        /// asset and need neither.
+        private static Vector2 ChipSize(string text, float fontSize, float scale)
+        {
+            float w, h;
+            if (!TryMeasure(text, fontSize, out w, out h))
+            {
+                w = ChipDigitWidth * text.Length * scale;
+                h = ChipHeight * scale;
+            }
+            return new Vector2(w + ChipPadX * scale, h + ChipPadY * scale);
+        }
+
+        private static bool TryMeasure(string text, float fontSize, out float width, out float height)
+        {
+            width = 0f;
+            height = 0f;
+
+            TMP_FontAsset font = _sharedFont;
+            if (font == null || font.faceInfo.pointSize <= 0)
+                return false;
+
+            float unit = fontSize / font.faceInfo.pointSize * font.faceInfo.scale;
+            float bold = font.boldSpacing / 100f * fontSize;
+
+            foreach (char c in text)
+            {
+                TMP_Character ch;
+                if (!font.characterLookupTable.TryGetValue(c, out ch) || ch.glyph == null)
+                    return false;
+                width += ch.glyph.metrics.horizontalAdvance * unit + bold;
+            }
+
+            height = (font.faceInfo.ascentLine - font.faceInfo.descentLine) * unit;
+            return width > 0f && height > 0f;
+        }
 
         private void PlaceSeparator(int index, float x, float width, float height, float rowHeight)
         {
@@ -290,7 +332,7 @@ namespace RoomIconsMod
             chip.anchorMax = bottomRight;
             chip.pivot = bottomRight;
             chip.anchoredPosition = Vector2.zero;
-            chip.sizeDelta = ChipSize(1, 1f);
+            chip.sizeDelta = ChipSize("0", BaseFontSize, 1f);
 
             Image bg = chipGo.AddComponent<Image>();
             bg.color = ChipColor;
@@ -306,7 +348,7 @@ namespace RoomIconsMod
 
             var label = textGo.AddComponent<TextMeshProUGUI>();
             label.font = font;
-            label.fontSize = 11f;
+            label.fontSize = BaseFontSize;
             label.fontStyle = FontStyles.Bold;
             label.color = Color.white;
             label.alignment = TextAlignmentOptions.Center;

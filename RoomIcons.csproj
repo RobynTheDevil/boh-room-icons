@@ -70,6 +70,11 @@
       <HintPath>$(BohManaged)\Unity.TextMeshPro.dll</HintPath>
       <Private>false</Private>
     </Reference>
+    <!-- FaceInfo and Glyph, used to measure text from the font asset's own metrics -->
+    <Reference Include="UnityEngine.TextCoreFontEngineModule">
+      <HintPath>$(BohManaged)\UnityEngine.TextCoreFontEngineModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
   </ItemGroup>
 
 </Project>
