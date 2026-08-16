@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using SecretHistories.Manifestations;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -12,7 +13,7 @@ namespace RoomIconsMod
     {
         private const float IconSize = 24f;
         private const float IconGap = 2f;
-        private const float DotSize = 3f;
+        private const float DotSize = 9f;
         private const float DotMargin = 3f;
         private const float DividerWidth = 1f;
         private const float DividerMargin = 5f;
@@ -20,9 +21,15 @@ namespace RoomIconsMod
         private const float InsetY = 6f;
         private const int SortingOrder = 5;
 
+        private const float FontScanInterval = 1f;
+        private const string DiamondSpriteName = "diamond spacer";
+
         private static readonly Color ChipColor = new Color(0f, 0f, 0f, 0.85f);
 
         private static TMP_FontAsset _sharedFont;
+        private static float _lastFontScan = -999f;
+        private static Sprite _diamondSprite;
+        private static float _lastDiamondScan = -999f;
 
         private GameObject _container;
         private readonly List<IconSlot> _icons = new List<IconSlot>();
@@ -31,6 +38,7 @@ namespace RoomIconsMod
         private int _builtSeps;
         private string _cachedSig;
         private RoomReqs _reqs;
+        private bool _pendingAssets;
 
         private class IconSlot
         {
@@ -56,7 +64,7 @@ namespace RoomIconsMod
                 return;
             }
 
-            if (reqs.Signature == _cachedSig && _container != null)
+            if (reqs.Signature == _cachedSig && _container != null && !_pendingAssets)
             {
                 ApplyVisibility();
                 return;
@@ -115,6 +123,8 @@ namespace RoomIconsMod
             if (reqs.Essential.Count > 0 && reqs.Required.Count > 0)
                 sepCount += 1;
 
+            _pendingAssets = false;
+
             while (_builtIcons < iconCount)
                 AddIconSlot(_builtIcons++);
             while (_builtSeps < sepCount)
@@ -139,7 +149,8 @@ namespace RoomIconsMod
             if (reqs.Essential.Count > 0 && reqs.Required.Count > 0)
             {
                 x += DividerMargin * scale;
-                PlaceSeparator(sepIndex++, x, DividerWidth * scale, icon * 0.75f, icon, 0.55f);
+                PlaceSeparator(sepIndex++, x, DividerWidth * scale, icon * 0.75f, icon,
+                    new Color(1f, 1f, 1f, 0.55f), null);
                 x += DividerWidth * scale + DividerMargin * scale;
             }
 
@@ -149,7 +160,14 @@ namespace RoomIconsMod
                 if (i < reqs.Required.Count - 1)
                 {
                     x += DotMargin * scale;
-                    PlaceSeparator(sepIndex++, x, DotSize * scale, DotSize * scale, icon, 0.75f);
+                    Sprite diamond = ResolveDiamond();
+                    if (diamond == null)
+                        _pendingAssets = true;
+                    float dot = (diamond != null ? DotSize : 3f) * scale;
+                    // Keep the slot DotSize wide either way so the row does not reflow
+                    // when the sprite resolves.
+                    PlaceSeparator(sepIndex++, x + (DotSize * scale - dot) * 0.5f, dot, dot, icon,
+                        diamond != null ? Color.white : new Color(1f, 1f, 1f, 0.75f), diamond);
                     x += DotSize * scale + DotMargin * scale;
                 }
             }
@@ -183,6 +201,12 @@ namespace RoomIconsMod
             slot.Image.color = alternative ? new Color(1f, 1f, 1f, 0.92f) : Color.white;
             slot.Go.SetActive(true);
 
+            if (slot.Chip == null)
+                CreateValueChip(slot);
+
+            if (slot.Chip == null)
+                _pendingAssets = true;
+
             if (slot.Chip != null && slot.Label != null)
             {
                 bool showLevel = spec.Level > 1;
@@ -203,14 +227,41 @@ namespace RoomIconsMod
         private static void ResizeChip(RectTransform chip, TextMeshProUGUI tmp) =>
             chip.sizeDelta = new Vector2(tmp.preferredWidth + 2f, tmp.preferredHeight);
 
-        private void PlaceSeparator(int index, float x, float width, float height, float rowHeight, float alpha)
+        private void PlaceSeparator(int index, float x, float width, float height, float rowHeight,
+            Color color, Sprite sprite)
         {
             Image sep = _seps[index];
             var rect = (RectTransform)sep.transform;
             rect.sizeDelta = new Vector2(width, height);
             rect.anchoredPosition = new Vector2(x, (rowHeight - height) * 0.5f);
-            sep.color = new Color(1f, 1f, 1f, alpha);
+            sep.sprite = sprite;
+            sep.preserveAspect = sprite != null;
+            sep.color = color;
             sep.gameObject.SetActive(true);
+        }
+
+        /// The brown diamond the game uses between aspects in the room detail and preview
+        /// windows. It lives in a UI atlas, and mods may only add images under the aspect
+        /// and element folders, so it cannot be fetched through ResourcesManager: find the
+        /// already-loaded sprite by name instead.
+        private static Sprite ResolveDiamond()
+        {
+            if (_diamondSprite != null)
+                return _diamondSprite;
+            if (Time.unscaledTime - _lastDiamondScan < FontScanInterval)
+                return null;
+            _lastDiamondScan = Time.unscaledTime;
+
+            foreach (Sprite s in Resources.FindObjectsOfTypeAll<Sprite>())
+            {
+                if (s != null && s.name == DiamondSpriteName)
+                {
+                    _diamondSprite = s;
+                    return _diamondSprite;
+                }
+            }
+
+            return null;
         }
 
         private void AddIconSlot(int index)
@@ -231,6 +282,8 @@ namespace RoomIconsMod
             var slot = new IconSlot { Go = go, Rect = rect, Image = image };
             CreateValueChip(slot);
             _icons.Add(slot);
+            if (slot.Chip == null)
+                _pendingAssets = true;
         }
 
         /// Dark chip in the icon's bottom-right corner with the level on top, matching how
@@ -278,25 +331,30 @@ namespace RoomIconsMod
             slot.Label = label;
         }
 
-        private TMP_FontAsset ResolveFont()
+        /// Same font Didumos labels its aspect icons with. Didumos takes the first
+        /// TextMeshProUGUI under a CardManifestation (AspectOverlayView.BuildOverlay);
+        /// rooms carry no text of their own, so borrow from a card the same way rather
+        /// than grabbing whatever TMP happens to be first in the scene.
+        private static TMP_FontAsset ResolveFont()
         {
             if (_sharedFont != null)
                 return _sharedFont;
 
-            // Borrow whatever font the room art already uses, so the numbers match the game.
-            var local = GetComponentInChildren<TextMeshProUGUI>(true);
-            if (local != null && local.font != null)
-            {
-                _sharedFont = local.font;
-                return _sharedFont;
-            }
+            // Cards may not exist yet when rooms are first seeded, so this has to be
+            // retryable. Throttle the scan for the case where it never resolves.
+            if (Time.unscaledTime - _lastFontScan < FontScanInterval)
+                return null;
+            _lastFontScan = Time.unscaledTime;
 
-            var all = Resources.FindObjectsOfTypeAll<TextMeshProUGUI>();
-            foreach (TextMeshProUGUI t in all)
+            foreach (CardManifestation card in Resources.FindObjectsOfTypeAll<CardManifestation>())
             {
-                if (t != null && t.font != null)
+                if (card == null || !card.gameObject.scene.IsValid())
+                    continue;
+
+                var tmp = card.GetComponentInChildren<TextMeshProUGUI>(true);
+                if (tmp != null && tmp.font != null)
                 {
-                    _sharedFont = t.font;
+                    _sharedFont = tmp.font;
                     return _sharedFont;
                 }
             }
