@@ -24,7 +24,7 @@ namespace RoomIconsMod
             if (!terrain.IsShrouded || terrain.IsSealed)
             {
                 if (view != null)
-                    view.Build(null);
+                    view.Build(terrain, null);
                 return;
             }
 
@@ -32,14 +32,14 @@ namespace RoomIconsMod
             if (reqs == null || reqs.IsEmpty)
             {
                 if (view != null)
-                    view.Build(null);
+                    view.Build(terrain, null);
                 return;
             }
 
             if (view == null)
                 view = host.gameObject.AddComponent<RoomOverlayView>();
 
-            view.Build(reqs);
+            view.Build(terrain, reqs);
         }
     }
 }

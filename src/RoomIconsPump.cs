@@ -19,6 +19,7 @@ namespace RoomIconsMod
                 _seeded = true;
 
             RoomOverlay.TickZoomScale();
+            RoomOverlay.TickVisibility();
             RoomOverlay.TickPendingAssets();
 
             if (Input.GetKeyDown(ToggleKey))

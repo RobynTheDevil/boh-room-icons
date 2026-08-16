@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using SecretHistories.Manifestations;
+using SecretHistories.Tokens.Payloads;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -19,6 +20,10 @@ namespace RoomIconsMod
         private const float InsetY = 6f;
         private const int SortingOrder = 5;
 
+        private const float ChipHeight = 13f;
+        private const float ChipDigitWidth = 7f;
+        private const float ChipPadX = 5f;
+
         private const float FontScanInterval = 1f;
         private const int FontFallbackAfterScans = 8;
 
@@ -35,6 +40,7 @@ namespace RoomIconsMod
         private int _builtSeps;
         private string _cachedSig;
         private RoomReqs _reqs;
+        private ConnectedTerrain _terrain;
         private bool _pendingAssets;
 
         private class IconSlot
@@ -51,9 +57,10 @@ namespace RoomIconsMod
 
         private void OnDestroy() => RoomOverlay.Unregister(this);
 
-        public void Build(RoomReqs reqs)
+        public void Build(ConnectedTerrain terrain, RoomReqs reqs)
         {
             RoomOverlay.Register(this);
+            _terrain = terrain;
             _reqs = reqs;
 
             if (reqs == null || reqs.IsEmpty)
@@ -81,11 +88,7 @@ namespace RoomIconsMod
         public void Rebuild()
         {
             _cachedSig = null;
-            RoomReqs fresh = _reqs;
-            var terrain = GetComponentInParent<SecretHistories.Tokens.Payloads.TerrainFeature>();
-            if (terrain != null)
-                fresh = RoomOverlay.GetReqs(terrain);
-            Build(fresh);
+            Build(_terrain, _terrain != null ? RoomOverlay.GetReqs(_terrain) : _reqs);
         }
 
         /// Counter-scales the whole row against camera distance so it stays legible as the
@@ -98,12 +101,18 @@ namespace RoomIconsMod
             _container.transform.localScale = new Vector3(scale, scale, 1f);
         }
 
+        /// Lock state is re-read here rather than trusted from build time. Seeding runs as
+        /// soon as the terrain objects exist, which can be before the save has been applied
+        /// to them, and every room defaults to shrouded until then: without this re-check,
+        /// rooms that are already open keep an overlay until something happens to fire
+        /// UpdateVisuals on them again.
         public void ApplyVisibility()
         {
             if (_container == null)
                 return;
 
-            bool show = RoomOverlay.IsVisible && _reqs != null && !_reqs.IsEmpty;
+            bool locked = _terrain != null && _terrain.IsShrouded && !_terrain.IsSealed;
+            bool show = RoomOverlay.IsVisible && locked && _reqs != null && !_reqs.IsEmpty;
             // Never Image.enabled: UICullRoom owns that flag and will stomp it.
             _container.SetActive(show);
         }
@@ -213,19 +222,22 @@ namespace RoomIconsMod
                 slot.Chip.gameObject.SetActive(showLevel);
                 if (showLevel)
                 {
-                    slot.Label.text = spec.Level.ToString();
+                    string text = spec.Level.ToString();
+                    slot.Label.text = text;
                     slot.Label.fontSize = Mathf.Max(7f, 11f * scale);
-                    slot.Label.ForceMeshUpdate(false, false);
-                    ResizeChip(slot.Chip, slot.Label);
+                    slot.Chip.sizeDelta = ChipSize(text.Length, scale);
                 }
             }
 
             return x + size;
         }
 
-        // The chip hugs the glyphs, so it has to be sized after the text mesh is rebuilt.
-        private static void ResizeChip(RectTransform chip, TextMeshProUGUI tmp) =>
-            chip.sizeDelta = new Vector2(tmp.preferredWidth + 2f, tmp.preferredHeight);
+        /// Sized from the digit count rather than from TMP's preferredWidth. preferredWidth
+        /// needs a rebuilt mesh, and ForceMeshUpdate is a no-op while the object is
+        /// inactive, which left the chip 0x0: an invisible background, and a text rect
+        /// whose stretch offsets then went negative so the number drew outside the icon.
+        private static Vector2 ChipSize(int digits, float scale) =>
+            new Vector2(ChipPadX + ChipDigitWidth * digits, ChipHeight) * scale;
 
         private void PlaceSeparator(int index, float x, float width, float height, float rowHeight)
         {
@@ -278,7 +290,7 @@ namespace RoomIconsMod
             chip.anchorMax = bottomRight;
             chip.pivot = bottomRight;
             chip.anchoredPosition = Vector2.zero;
-            chip.sizeDelta = Vector2.zero;
+            chip.sizeDelta = ChipSize(1, 1f);
 
             Image bg = chipGo.AddComponent<Image>();
             bg.color = ChipColor;
@@ -289,8 +301,8 @@ namespace RoomIconsMod
             textRect.SetParent(chip, false);
             textRect.anchorMin = Vector2.zero;
             textRect.anchorMax = Vector2.one;
-            textRect.offsetMin = new Vector2(1f, 0f);
-            textRect.offsetMax = new Vector2(-1f, 0f);
+            textRect.offsetMin = Vector2.zero;
+            textRect.offsetMax = Vector2.zero;
 
             var label = textGo.AddComponent<TextMeshProUGUI>();
             label.font = font;

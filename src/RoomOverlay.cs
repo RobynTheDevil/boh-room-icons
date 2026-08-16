@@ -36,7 +36,9 @@ namespace RoomIconsMod
         private static bool _contentEventsWired;
         private static float _appliedScale = -1f;
         private static float _lastPendingTick = -999f;
+        private static float _lastVisibilityTick = -999f;
         private const float PendingRetryInterval = 0.5f;
+        private const float VisibilityRetryInterval = 0.25f;
 
         /// Safety rail only. The camera clamps its own z to [FARTHEST, CLOSE], which caps
         /// the natural scale at ZOOM_Z_FARTHEST / ZOOM_Z_MID = 3.
@@ -77,6 +79,19 @@ namespace RoomIconsMod
         }
 
         public static void ClearCache() => ReqsByTerrainId.Clear();
+
+        /// A room's lock state changes without UpdateVisuals necessarily firing at a moment
+        /// this mod sees, so re-assert visibility on a slow tick. Each view only compares a
+        /// couple of bools and calls SetActive, so this stays cheap.
+        public static void TickVisibility()
+        {
+            if (Live.Count == 0)
+                return;
+            if (Time.unscaledTime - _lastVisibilityTick < VisibilityRetryInterval)
+                return;
+            _lastVisibilityTick = Time.unscaledTime;
+            ApplyVisibilityToAll();
+        }
 
         /// The font is borrowed from a card, which need not exist when rooms are first
         /// seeded. UpdateVisuals does not fire again for a room that is just sitting there
