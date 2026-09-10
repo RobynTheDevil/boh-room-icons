@@ -7,8 +7,9 @@ using UnityEngine.UI;
 
 namespace RoomIconsMod
 {
-    /// Draws a room's unlock requirements as a row of aspect icons, bottom-left of the room. A component
-    /// on the RoomManifestation itself, so it survives repeat UpdateVisuals calls and dies with the token.
+    /// Draws a room's unlock requirements as a row of aspect icons, bottom-left of the room. A
+    /// component on the RoomManifestation itself, so it survives repeat UpdateVisuals calls and
+    /// dies with the token.
     public class RoomOverlayView : MonoBehaviour
     {
         private const float IconSize = 24f;
@@ -30,8 +31,8 @@ namespace RoomIconsMod
         private const float ChipHeight = 13f;
         private const float ChipDigitWidth = 7f;
 
-        /// Cap the counter-scale per room so the row never grows wider than the room it labels. False lets
-        /// icons keep their on-screen size regardless.
+        /// Cap the counter-scale per room so the row never grows wider than the room it labels.
+        /// False lets icons keep their on-screen size regardless.
         private const bool ClampScaleToRoomWidth = true;
 
         private const float FontScanInterval = 1f;
@@ -102,8 +103,9 @@ namespace RoomIconsMod
             Build(_terrain, _terrain != null ? RoomOverlay.GetReqs(_terrain) : _reqs);
         }
 
-        /// Counter-scales the whole row against camera distance. Applied to the container, so icons, chips
-        /// and divider scale together and the row stays pinned to the room's bottom-left corner.
+        /// Counter-scales the whole row against camera distance. Applied to the container, so
+        /// icons, chips and divider scale together and the row stays pinned to the room's
+        /// bottom-left corner.
         public void SetIconScale(float scale)
         {
             if (_container == null)
@@ -112,8 +114,8 @@ namespace RoomIconsMod
             _container.transform.localScale = new Vector3(s, s, 1f);
         }
 
-        /// Lock state is re-read here rather than trusted from build time: seeding can run before the save
-        /// has been applied, and every room defaults to shrouded until then.
+        /// Lock state is re-read here rather than trusted from build time: seeding can run before
+        /// the save has been applied, and every room defaults to shrouded until then.
         public void ApplyVisibility()
         {
             if (_container == null)
@@ -196,9 +198,9 @@ namespace RoomIconsMod
 
             ((RectTransform)_container.transform).sizeDelta = new Vector2(x, icon);
 
-            // The row is laid out at 1x and then multiplied by the counter-scale, so the ceiling that keeps
-            // it inside the room is how many times its own width fits across the room. It moves with both
-            // the requirement count and the room.
+            // The row is laid out at 1x and then multiplied by the counter-scale, so the ceiling
+            // that keeps it inside the room is how many times its own width fits across the room.
+            // It moves with both the requirement count and the room.
             _maxScale = ClampScaleToRoomWidth && hostWidth > 0f && x > 0f
                 ? Mathf.Max(1f, hostWidth / x)
                 : float.MaxValue;
@@ -257,9 +259,9 @@ namespace RoomIconsMod
             return x + size;
         }
 
-        /// From the font's own glyph metrics, never TMP's `preferredWidth`, which needs a rebuilt mesh:
-        /// `ForceMeshUpdate` is a no-op while the object is inactive, which is reachable here and is how
-        /// the chip previously ended up 0x0.
+        /// From the font's own glyph metrics, never TMP's `preferredWidth`, which needs a rebuilt
+        /// mesh: `ForceMeshUpdate` is a no-op while the object is inactive, which is reachable here
+        /// and is how the chip previously ended up 0x0.
         private static Vector2 ChipSize(string text, float fontSize, float scale)
         {
             float w, h;
@@ -328,9 +330,9 @@ namespace RoomIconsMod
                 _pendingAssets = true;
         }
 
-        /// Dark chip in the icon's bottom-right corner with the level on top. A TMP outline is not an
-        /// option: the font asset is shared with the game's own text, and `outlineWidth` writes through to
-        /// the shared material.
+        /// Dark chip in the icon's bottom-right corner with the level on top. A TMP outline is not
+        /// an option: the font asset is shared with the game's own text, and `outlineWidth` writes
+        /// through to the shared material.
         private void CreateValueChip(IconSlot slot)
         {
             TMP_FontAsset font = ResolveFont();
@@ -379,7 +381,8 @@ namespace RoomIconsMod
             if (_sharedFont != null)
                 return _sharedFont;
 
-            // Cards may not exist when rooms are first seeded, so this is retryable, throttled for the case where it never resolves.
+            // Cards may not exist when rooms are first seeded, so this is retryable, throttled for
+            // the case where it never resolves.
             if (Time.unscaledTime - _lastFontScan < FontScanInterval)
                 return null;
             _lastFontScan = Time.unscaledTime;
@@ -399,7 +402,8 @@ namespace RoomIconsMod
                 }
             }
 
-            // No card ever turned up: the hand can be empty. Numbers in a near-enough font beat no numbers.
+            // No card ever turned up: the hand can be empty. Numbers in a near-enough font beat no
+            // numbers.
             if (_fontScanAttempts >= FontFallbackAfterScans)
             {
                 foreach (TextMeshProUGUI tmp in Resources.FindObjectsOfTypeAll<TextMeshProUGUI>())

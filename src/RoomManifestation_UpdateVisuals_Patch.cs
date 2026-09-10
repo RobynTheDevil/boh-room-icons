@@ -1,4 +1,4 @@
-using HarmonyLib;
+﻿using HarmonyLib;
 using RoomIconsMod;
 using SecretHistories.Abstract;
 using SecretHistories.Manifestations;

@@ -11,15 +11,16 @@ namespace RoomIconsMod
             if (host == null)
                 return;
 
-            // ConnectedTerrain covers Hush House rooms. WisdomNodeTerrain subclasses it but renders through
-            // WisdomNodeManifestation, so it never reaches this patch.
+            // ConnectedTerrain covers Hush House rooms. WisdomNodeTerrain subclasses it but renders
+            // through WisdomNodeManifestation, so it never reaches this patch.
             var terrain = manifestable as ConnectedTerrain;
             if (terrain == null)
                 return;
 
             var view = host.GetComponent<RoomOverlayView>();
 
-            // Shrouded means unopened, sealed means no adjacent open room yet: the game's own condition for showing unlock details.
+            // Shrouded means unopened, sealed means no adjacent open room yet: the game's own
+            // condition for showing unlock details.
             if (!terrain.IsShrouded || terrain.IsSealed)
             {
                 if (view != null)
