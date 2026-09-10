@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Text;
 using SecretHistories.Core;
 using SecretHistories.Entities;
@@ -40,9 +40,8 @@ namespace RoomIconsMod
         private const float PendingRetryInterval = 0.5f;
         private const float VisibilityRetryInterval = 0.25f;
 
-        /// Safety rail only. The camera clamps its own z to [FARTHEST, CLOSE], so the
-        /// reference below already caps the natural scale at 2400 / 500 = 4.8. Per-room
-        /// clamping in RoomOverlayView usually binds well before either.
+        /// Safety rail only. The camera clamps its own z, so the reference below already caps the natural
+        /// scale at 2400 / 500 = 4.8, and per-room clamping usually binds before either.
         private const float MaxIconScale = 12f;
 
         public static bool IsVisible => _userVisible;
@@ -81,9 +80,8 @@ namespace RoomIconsMod
 
         public static void ClearCache() => ReqsByTerrainId.Clear();
 
-        /// A room's lock state changes without UpdateVisuals necessarily firing at a moment
-        /// this mod sees, so re-assert visibility on a slow tick. Each view only compares a
-        /// couple of bools and calls SetActive, so this stays cheap.
+        /// A room's lock state changes without `UpdateVisuals` necessarily firing where this mod sees it,
+        /// so visibility is re-asserted on a slow tick.
         public static void TickVisibility()
         {
             if (Live.Count == 0)
@@ -94,10 +92,8 @@ namespace RoomIconsMod
             ApplyVisibilityToAll();
         }
 
-        /// The font is borrowed from a card, which need not exist when rooms are first
-        /// seeded. UpdateVisuals does not fire again for a room that is just sitting there
-        /// shrouded, so without this a late-resolving font would never be picked up and the
-        /// value chips would stay missing for the whole session.
+        /// The font is borrowed from a card, which need not exist when rooms are first seeded, and
+        /// `UpdateVisuals` does not fire again for a room sitting shrouded.
         public static void TickPendingAssets()
         {
             if (Live.Count == 0)
@@ -116,8 +112,8 @@ namespace RoomIconsMod
             }
         }
 
-        /// Requirements are read from the live Compendium every time the cache misses, so a
-        /// content mod that alters a room's unlock cost is picked up with no change here.
+        /// Read from the live Compendium on every cache miss, so a content mod that alters a room's unlock
+        /// cost is picked up with no change here.
         public static RoomReqs GetReqs(TerrainFeature terrain)
         {
             if (terrain == null)
@@ -144,8 +140,7 @@ namespace RoomIconsMod
             if (recipe == null || !recipe.IsValid() || recipe.PreSlots == null)
                 return reqs;
 
-            // Iterate every preslot rather than assuming one: base content only ever has a
-            // single "infoRecipeInput", but a content mod is free to add more.
+            // Every preslot rather than one: base content has a single "infoRecipeInput", a content mod may add more.
             foreach (SphereSpec spec in recipe.PreSlots)
             {
                 if (spec == null)
@@ -186,8 +181,7 @@ namespace RoomIconsMod
 
                 if (element != null)
                 {
-                    // Element.Icon falls back to the element id when unset, and mod-supplied
-                    // sprites win over the game's own inside ResourcesManager.
+                    // Element.Icon falls back to the element id when unset, and mod sprites win inside ResourcesManager.
                     sprite = element.IsAspect
                         ? ResourcesManager.GetSpriteForAspect(element.Icon)
                         : ResourcesManager.GetSpriteForElement(element.Icon);
@@ -200,20 +194,9 @@ namespace RoomIconsMod
             }
         }
 
-        /// Zooming moves the camera along z, so an overlay's apparent size goes as
-        /// localScale / |z|. Scaling by |z| / reference therefore holds the icons at a
-        /// fixed size on screen however far out the camera pulls.
-        ///
-        /// The reference is the single knob for both when scaling starts and how large the
-        /// icons end up: beyond it the held apparent size is 1 / reference, so a smaller
-        /// reference both begins scaling closer in and holds a bigger size once it does.
-        /// The reference sits midway between ZOOM_Z_QUITE_CLOSE and ZOOM_Z_MID: tuned by
-        /// eye, and expressed against those two so it tracks the game's own zoom stops
-        /// rather than hardcoding 500.
-        ///
-        /// Clamped at 1 so zooming in nearer than the reference lets the icons grow with
-        /// the room instead of shrinking: up close they read as part of the room, and only
-        /// past the reference do they start holding their own size.
+        /// Holds the row at a fixed size on screen as the camera pulls back, clamped at 1 below the
+        /// reference so zooming in lets the icons grow with the room. The reference is the one knob for
+        /// both when growth starts and how large it settles; see room-icons.md, "Zoom".
         public static float CurrentIconScale()
         {
             CamOperator cam = Watchman.Get<CamOperator>();
@@ -227,9 +210,8 @@ namespace RoomIconsMod
             return Mathf.Clamp(Mathf.Abs(cam.GetCurrentZoomHeight()) / reference, 1f, MaxIconScale);
         }
 
-        /// The camera glides continuously, so this cannot key off discrete zoom levels the
-        /// way a show/hide gate could. Compare against the scale actually applied and skip
-        /// the fan-out until it drifts far enough to be visible.
+        /// The camera glides continuously rather than snapping between levels, so this compares against the
+        /// scale actually applied and skips the fan-out until it drifts far enough to see.
         public static void TickZoomScale()
         {
             if (Live.Count == 0)
@@ -247,8 +229,8 @@ namespace RoomIconsMod
             }
         }
 
-        /// UpdateVisuals only fires on change, so rooms present at world load never get an
-        /// overlay without this sweep. Returns false until the world exists.
+        /// `UpdateVisuals` fires only on change, so rooms present at world load never get an overlay
+        /// without this sweep. Returns false until the world exists.
         public static bool TrySeedOnce()
         {
             var terrains = Resources.FindObjectsOfTypeAll<ConnectedTerrain>();
@@ -275,8 +257,8 @@ namespace RoomIconsMod
             return sawAny;
         }
 
-        /// Compendium.Reload() runs whenever the player closes the mod panel after a change,
-        /// so cached requirements must be dropped when content is republished.
+        /// `Compendium.Reload()` runs whenever the player closes the mod panel after a change, so cached
+        /// requirements are dropped when content is republished.
         public static bool TryWireContentEventsOnce()
         {
             if (_contentEventsWired)

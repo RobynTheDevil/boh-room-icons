@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using SecretHistories.Manifestations;
 using SecretHistories.Tokens.Payloads;
 using TMPro;
@@ -7,9 +7,8 @@ using UnityEngine.UI;
 
 namespace RoomIconsMod
 {
-    /// Draws a room's unlock requirements as a row of aspect icons, bottom-left of the room.
-    /// Lives as a component on the RoomManifestation itself, so it survives repeat
-    /// UpdateVisuals calls and dies with the room token.
+    /// Draws a room's unlock requirements as a row of aspect icons, bottom-left of the room. A component
+    /// on the RoomManifestation itself, so it survives repeat UpdateVisuals calls and dies with the token.
     public class RoomOverlayView : MonoBehaviour
     {
         private const float IconSize = 24f;
@@ -23,8 +22,7 @@ namespace RoomIconsMod
         private const float BaseFontSize = 11f;
         private const float MinFontSize = 7f;
 
-        // Padding added around the measured glyphs. Didumos uses preferredWidth + 2 with no
-        // vertical padding; these are the knobs for tightening or loosening that fit.
+        // Padding around the measured glyphs: the knobs for tightening or loosening the fit.
         private const float ChipPadX = 2f;
         private const float ChipPadY = 0f;
 
@@ -32,8 +30,8 @@ namespace RoomIconsMod
         private const float ChipHeight = 13f;
         private const float ChipDigitWidth = 7f;
 
-        /// Cap the camera counter-scale per room so the row never grows wider than the
-        /// room it labels. Set false to let icons keep their on-screen size regardless.
+        /// Cap the counter-scale per room so the row never grows wider than the room it labels. False lets
+        /// icons keep their on-screen size regardless.
         private const bool ClampScaleToRoomWidth = true;
 
         private const float FontScanInterval = 1f;
@@ -104,9 +102,8 @@ namespace RoomIconsMod
             Build(_terrain, _terrain != null ? RoomOverlay.GetReqs(_terrain) : _reqs);
         }
 
-        /// Counter-scales the whole row against camera distance so it stays legible as the
-        /// camera pulls back. Applied to the container, so icons, chips and the divider all
-        /// scale together and the row stays pinned to the room's bottom-left corner.
+        /// Counter-scales the whole row against camera distance. Applied to the container, so icons, chips
+        /// and divider scale together and the row stays pinned to the room's bottom-left corner.
         public void SetIconScale(float scale)
         {
             if (_container == null)
@@ -115,11 +112,8 @@ namespace RoomIconsMod
             _container.transform.localScale = new Vector3(s, s, 1f);
         }
 
-        /// Lock state is re-read here rather than trusted from build time. Seeding runs as
-        /// soon as the terrain objects exist, which can be before the save has been applied
-        /// to them, and every room defaults to shrouded until then: without this re-check,
-        /// rooms that are already open keep an overlay until something happens to fire
-        /// UpdateVisuals on them again.
+        /// Lock state is re-read here rather than trusted from build time: seeding can run before the save
+        /// has been applied, and every room defaults to shrouded until then.
         public void ApplyVisibility()
         {
             if (_container == null)
@@ -202,10 +196,9 @@ namespace RoomIconsMod
 
             ((RectTransform)_container.transform).sizeDelta = new Vector2(x, icon);
 
-            // The row is laid out at 1x and then multiplied by the camera counter-scale, so
-            // the ceiling that keeps it inside the room is simply how many times its own
-            // width fits across the room. Recomputed here because it moves with both the
-            // requirement count and the room.
+            // The row is laid out at 1x and then multiplied by the counter-scale, so the ceiling that keeps
+            // it inside the room is how many times its own width fits across the room. It moves with both
+            // the requirement count and the room.
             _maxScale = ClampScaleToRoomWidth && hostWidth > 0f && x > 0f
                 ? Mathf.Max(1f, hostWidth / x)
                 : float.MaxValue;
@@ -264,11 +257,9 @@ namespace RoomIconsMod
             return x + size;
         }
 
-        /// Measured from the font's own glyph metrics, so the chip hugs the number the way
-        /// Didumos's does, but without TMP's preferredWidth. preferredWidth needs a rebuilt
-        /// mesh and ForceMeshUpdate is a no-op while the object is inactive, which is how
-        /// the chip previously ended up 0x0. Glyph metrics are static data on the font
-        /// asset and need neither.
+        /// From the font's own glyph metrics, never TMP's `preferredWidth`, which needs a rebuilt mesh:
+        /// `ForceMeshUpdate` is a no-op while the object is inactive, which is reachable here and is how
+        /// the chip previously ended up 0x0.
         private static Vector2 ChipSize(string text, float fontSize, float scale)
         {
             float w, h;
@@ -337,10 +328,9 @@ namespace RoomIconsMod
                 _pendingAssets = true;
         }
 
-        /// Dark chip in the icon's bottom-right corner with the level on top, matching how
-        /// Didumos labels its aspect icons. A TMP outline is not an option here: the font
-        /// asset is shared with the game's own text, and outlineWidth writes through to the
-        /// shared material.
+        /// Dark chip in the icon's bottom-right corner with the level on top. A TMP outline is not an
+        /// option: the font asset is shared with the game's own text, and `outlineWidth` writes through to
+        /// the shared material.
         private void CreateValueChip(IconSlot slot)
         {
             TMP_FontAsset font = ResolveFont();
@@ -382,17 +372,14 @@ namespace RoomIconsMod
             slot.Label = label;
         }
 
-        /// Same font Didumos labels its aspect icons with. Didumos takes the first
-        /// TextMeshProUGUI under a CardManifestation (AspectOverlayView.BuildOverlay);
-        /// rooms carry no text of their own, so borrow from a card the same way rather
-        /// than grabbing whatever TMP happens to be first in the scene.
+        /// Borrowed from a card's first `TextMeshProUGUI`, as Didumos does
+        /// (`AspectOverlayView.cs:180-182`), rooms carrying no text of their own.
         private static TMP_FontAsset ResolveFont()
         {
             if (_sharedFont != null)
                 return _sharedFont;
 
-            // Cards may not exist yet when rooms are first seeded, so this has to be
-            // retryable. Throttle the scan for the case where it never resolves.
+            // Cards may not exist when rooms are first seeded, so this is retryable, throttled for the case where it never resolves.
             if (Time.unscaledTime - _lastFontScan < FontScanInterval)
                 return null;
             _lastFontScan = Time.unscaledTime;
@@ -412,8 +399,7 @@ namespace RoomIconsMod
                 }
             }
 
-            // No card ever turned up: the hand can be empty, or the view can be somewhere
-            // cards do not exist. Numbers in a near-enough font beat no numbers at all.
+            // No card ever turned up: the hand can be empty. Numbers in a near-enough font beat no numbers.
             if (_fontScanAttempts >= FontFallbackAfterScans)
             {
                 foreach (TextMeshProUGUI tmp in Resources.FindObjectsOfTypeAll<TextMeshProUGUI>())
