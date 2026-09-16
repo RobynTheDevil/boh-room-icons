@@ -10,6 +10,7 @@
     <OutputPath>dll\</OutputPath>
     <DebugType>none</DebugType>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <GenerateDependencyFile>false</GenerateDependencyFile>
     <AssemblyVersion>0.1.0.0</AssemblyVersion>
     <NoWarn>$(NoWarn);CS0436;MSB3277</NoWarn>
   </PropertyGroup>
@@ -18,10 +19,14 @@
     <Compile Include="src\**\*.cs" />
   </ItemGroup>
 
+  <!-- net472 and Private, deliberately: the game bundles no Harmony, so the mod must
+       ship one, and net472 is the binary the other Book of Hours mods load. The
+       netstandard lib folder NuGet would otherwise pick is an empty placeholder. -->
   <ItemGroup>
+    <PackageReference Include="Lib.Harmony" Version="2.3.6" ExcludeAssets="all" GeneratePathProperty="true" />
     <Reference Include="0Harmony">
-      <HintPath>lib\0Harmony.dll</HintPath>
-      <Private>false</Private>
+      <HintPath>$(PkgLib_Harmony)\lib\net472\0Harmony.dll</HintPath>
+      <Private>true</Private>
     </Reference>
   </ItemGroup>
 
