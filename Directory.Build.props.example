@@ -1,0 +1,19 @@
+<Project>
+  <PropertyGroup>
+    <!-- Absolute path to the game's Managed folder. Copy this file to
+         Directory.Build.props and set it to your own install.
+
+         Steam, Windows:
+           C:\Program Files (x86)\Steam\steamapps\common\Book of Hours\bh_Data\Managed
+         Steam, a second library:
+           D:\SteamLibrary\steamapps\common\Book of Hours\bh_Data\Managed
+         Steam, macOS:
+           ~/Library/Application Support/Steam/steamapps/common/Book of Hours/bh.app/Contents/Resources/Data/Managed
+         Steam, Linux:
+           ~/.steam/steam/steamapps/common/Book of Hours/bh_Data/Managed
+
+         Building from WSL against a Windows install must use a real Windows
+         path: MSBuild runs on the Windows side and cannot follow WSL symlinks. -->
+    <BohManaged>C:\Program Files (x86)\Steam\steamapps\common\Book of Hours\bh_Data\Managed</BohManaged>
+  </PropertyGroup>
+</Project>
