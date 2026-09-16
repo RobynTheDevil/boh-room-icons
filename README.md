@@ -14,6 +14,13 @@ Install with [Steam workshop]() or put the extracted release folder in the game'
 | macOS | `~/Library/Application Support/Weather Factory/Book of Hours/mods/` |
 | Linux | `~/.config/unity3d/Weather Factory/Book of Hours/mods/` |
 
+## This repo is a mirror
+
+Room Icons is developed in a larger workspace alongside other Book of Hours mods, and this
+repo is generated from that mod's folder. The history here is rewritten rather than
+authored, so a pull request cannot be merged into it. Open an issue instead and the fix
+will arrive on the next release.
+
 ## Building from source
 
 You need the .NET SDK and a copy of the game, which supplies the assemblies the mod
