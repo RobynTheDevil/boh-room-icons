@@ -1,0 +1,7 @@
+# Build output.
+dll/
+obj/
+bin/
+
+# Your own game path, made by copying Directory.Build.props.example.
+Directory.Build.props
