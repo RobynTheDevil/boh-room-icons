@@ -20,6 +20,12 @@
     <Compile Include="src\**\*.cs" />
   </ItemGroup>
 
+  <!-- Harmony and the MonoMod merged into it are MIT, which requires the notice to
+       travel with the binary. Copied beside it so a release cannot omit it. -->
+  <ItemGroup>
+    <None Include="THIRD-PARTY-NOTICES.txt" CopyToOutputDirectory="PreserveNewest" Visible="false" />
+  </ItemGroup>
+
   <!-- net472 and Private, deliberately: the game bundles no Harmony, so the mod must
        ship one, and net472 is the binary the other Book of Hours mods load. The
        netstandard lib folder NuGet would otherwise pick is an empty placeholder. -->

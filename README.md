@@ -45,8 +45,8 @@ cp Directory.Build.props.example Directory.Build.props
 dotnet build -c Release
 ```
 
-That writes `RoomIcons.dll` and `0Harmony.dll` into `dll/`. Copy `dll/` and
-`synopsis.json` into a `room_icons` folder in the mods directory above.
+That writes `RoomIcons.dll`, `0Harmony.dll` and `THIRD-PARTY-NOTICES.txt` into `dll/`.
+Copy `dll/` and `synopsis.json` into a `room_icons` folder in the mods directory above.
 
 Building from WSL against a Windows install has to run the Windows `dotnet.exe`, because
 MSBuild cannot follow WSL symlinks and reads `BohManaged` as a native Windows path.
@@ -60,4 +60,9 @@ works under one load order and not another is usually this.
 
 ## License
 
-See [LICENSE](LICENSE).
+Room Icons is under [LICENSE](LICENSE).
+
+It also ships `0Harmony.dll`, which is not covered by that. Harmony is MIT, and the
+MonoMod merged into the same file is MIT as well. Both notices are in
+[THIRD-PARTY-NOTICES.txt](THIRD-PARTY-NOTICES.txt), which the build copies next to the
+binary. Keep it in anything you redistribute, which is what those licenses ask for.
