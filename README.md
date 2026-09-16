@@ -6,7 +6,7 @@ that draws each locked room's unlock requirements as aspect icons on the room it
 Room Icons is a DLL mod, so it needs **Ghirbi, the Gatekeeper** to load. Subscribe to
 Ghirbi on the Steam Workshop first. 
 
-Install with [Steam workshop]() or put the extracted release folder in the game's local mods directory:
+Install with [Steam workshop](https://steamcommunity.com/sharedfiles/filedetails/?id=3802715591) or put the extracted release folder in the game's local mods directory:
 
 | | |
 |---|---|
