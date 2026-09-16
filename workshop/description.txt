@@ -1,17 +1,6 @@
-Hush House will tell you what a locked room costs, but only if you hover it and wait, or open its detail window one room at a time. Room Icons puts the answer on the map.
-
-Every locked room you can reach shows its unlock requirements as aspect icons, drawn on the room itself. You can see a route through the house instead of discovering it a door at a time.
-
-[b]Reading the icons[/b]
-[list]
-[*][b]A solid group[/b] is the essential aspects. You need all of them.
-[*][b]A dot-separated group[/b] is the required principles. Any one of them, at its listed strength, is enough.
-[/list]
-
-The icons hold their size on screen as you zoom out, so the whole house stays readable from any distance, and a room's icons disappear the moment it opens.
+Draws room unlock requirements on the locked room itself for easy viewing when zoomed out.
 
 [b]Requires Ghirbi, the Gatekeeper[/b]
-Room Icons is a DLL mod and will not load on its own. Subscribe to Ghirbi as well, or nothing will happen.
 
 [b]Source[/b]
 https://github.com/RobynTheDevil/boh-room-icons
