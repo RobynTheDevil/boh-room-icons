@@ -11,6 +11,7 @@
     <DebugType>none</DebugType>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <GenerateDependencyFile>false</GenerateDependencyFile>
+    <AllowedReferenceRelatedFileExtensions>none</AllowedReferenceRelatedFileExtensions>
     <AssemblyVersion>0.1.0.0</AssemblyVersion>
     <NoWarn>$(NoWarn);CS0436;MSB3277</NoWarn>
   </PropertyGroup>
