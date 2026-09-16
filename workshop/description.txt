@@ -4,3 +4,10 @@ Draws room unlock requirements on the locked room itself for easy viewing when z
 
 [b]Source[/b]
 https://github.com/RobynTheDevil/boh-room-icons
+
+[b]Attribution[/b]
+Didumos by 1_2_3_4_5_6_7_8_9 was an invaluable reference during writing.
+https://steamcommunity.com/sharedfiles/filedetails/?id=3737298503
+
+[b]AI Disclaimer[/b]
+I have used generative AI in this project to write and review code.
